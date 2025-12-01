@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:habbit_tracker/screens/habit_tracker_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +18,14 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() {
     // The login goes here
     print('login logic here');
+    final username = _userNameController.text;
+    final password = _passwordController.text;
+    if (username == defaultUserName && password == defaultPassword) {
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(
+              builder: (context) => HabitTrackerScreen(username: username)
+          ));
+    }
   }
 
   @override
