@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:habbit_tracker/screens/habit_tracker_screen.dart';
+import 'package:habbit_tracker/screens/registration_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,16 +18,33 @@ class _LoginScreenState extends State<LoginScreen> {
   final String defaultUserName = "test user";
   final String defaultPassword = 'password123';
 
-  void _login() {
+  void _login() async {
     // The login goes here
     print('login logic here');
     final username = _userNameController.text;
     final password = _passwordController.text;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     if (username == defaultUserName && password == defaultPassword) {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(
-              builder: (context) => HabitTrackerScreen(username: username)
-          ));
+      await prefs.setString('name', 'Test User');
+      await prefs.setString('username', 'testuser');
+      await prefs.setDouble('age', 25);
+      await prefs.setString('country', 'Norway');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HabitTrackerScreen(username: username),
+        ),
+      );
+    } else {
+      await prefs.clear();
+      Fluttertoast.showToast(
+        msg: 'The username or password was incorrect',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     }
   }
 
@@ -132,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const Placeholder(),
+                        builder: (context) => const RegisterScreen(),
                       ),
                     );
                   },

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddHabitScreen extends StatefulWidget {
   const AddHabitScreen({super.key});
@@ -29,17 +32,22 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   }
 
   Future<void> _loadHabits() async {
-    selectedHabitsMap = {
-      'Workout': 'FF5733', // Color in hex (e.g., Amber)
-      'Meditate': 'FF33A1',
-      'Read a Book': '33FFA1',
-      'Drink Water': '3380FF',
-      'Practice Gratitude': 'FFC300',
-    };
-    completedHabitMaps = {'Wake Up Early': 'FF5733', 'Journal': 'DAF7A6'};
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedHabitsMap = Map<String, String>.from(
+        jsonDecode(prefs.getString('selectedHabitsMap') ?? '{}'),
+      );
+      completedHabitMaps = Map<String, String>.from(
+        jsonDecode(prefs.getString('completedHabitMap') ?? '{}'),
+      );
+    });
   }
 
-  Future<void> _saveHabits() async {}
+  Future<void> _saveHabits() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitsMap));
+    await prefs.setString('completedHabitsMap', jsonEncode(completedHabitMaps));
+  }
 
   @override
   Widget build(BuildContext context) {

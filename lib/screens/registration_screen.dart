@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:habbit_tracker/screens/habit_tracker_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,6 +18,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
+
   double _age = 25;
   String _country = 'Norway';
   List<String> _countries = [];
@@ -33,28 +39,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCountries();
+    _loadCountries();
   }
 
-  Future<void> _fetchCountries() async {
-    List<String> subsetCountries = [
-      'United States',
-      'Canada',
-      'United Kingdom',
-      'Australia',
-      'India',
-      'Germany',
-      'France',
-      'Japan',
-      'China',
-      'Brazil',
-      'South Africa',
-    ];
-    setState(() {
-      _countries = subsetCountries;
-      _countries.sort();
-      _country = _countries.isNotEmpty ? _countries[0] : 'Norway';
-    });
+  Future<List<String>> _fetchCountries() async {
+    final response = await http.get(
+      Uri.parse('https:/restcountries.com/v3.1/all'),
+    );
+    if (response.statusCode == 200) {
+      List<dynamic> countriesJson = json.decode(response.body);
+      List<String> countryList = countriesJson
+      .map((country) => country['name']['common'] as String).toList();
+      return countryList;
+    } else {
+      throw Exception('Failed to load countries');
+    }
+  }
+
+  final Map<String, Color> _habitColors = {
+    'Amber': Colors.amber,
+    'Red Accent': Colors.redAccent,
+    'Light Blue': Colors.lightBlue,
+    'Light Green': Colors.lightGreen,
+    'Purple Accent': Colors.purpleAccent,
+    'Orange': Colors.orange,
+    'Teal': Colors.teal,
+    'Deep Purple': Colors.deepPurple,
+  };
+
+  Future<void> _loadCountries() async {
+    try {
+      List<String> countries = await _fetchCountries();
+      setState(() {
+        _countries = countries;
+      });
+    } catch (e) {
+      _showToast('Error fetching countries');
+    }
   }
 
   void _register() async {
@@ -64,6 +85,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showToast('Please fill in all fields');
       return;
     }
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map<String, String> selectedHabitMap = {};
+    final random = Random();
+    final colorKeys = _habitColors.keys.toList();
+    for (var habit in selectedHabits) {
+      var randomColor =
+          _habitColors[colorKeys[random.nextInt(colorKeys.length)]]!;
+      selectedHabitMap[habit] = randomColor.value.toRadixString(16);
+    }
+    await prefs.setString('name', name);
+    await prefs.setString('username', username);
+    await prefs.setDouble('age', _age);
+    await prefs.setString('country', _country);
+    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitMap));
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -83,6 +120,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _toggleHabitSelection(String habit) {
+    setState(() {
+      if (selectedHabits.contains(habit)) {
+        selectedHabits.remove(habit);
+      } else {
+        selectedHabits.add(habit);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => LoginScreen()),
             );
@@ -161,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: availableHabits.map((habit) {
                     final isSelected = selectedHabits.contains(habit);
                     return GestureDetector(
-                      onTap: () => null,
+                      onTap: () => _toggleHabitSelection(habit),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,

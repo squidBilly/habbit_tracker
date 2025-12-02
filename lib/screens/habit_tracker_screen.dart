@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:habbit_tracker/screens/add_habit_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HabitTrackerScreen extends StatefulWidget {
   final String username;
@@ -18,10 +21,27 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      name = prefs.getString('name') ?? widget.username;
+      selectedHabitMap = Map<String, String>.from(
+        jsonDecode(prefs.getString('selectedHabitsMap') ?? '{}'),
+      );
+      completedHabitMap = Map<String, String>.from(
+        jsonDecode(prefs.getString('completedHabitsMap') ?? '{}'),
+      );
+    });
   }
 
   Future<void> _saveHabits() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     // save habits to preferences in the future
+    await prefs.setString('selectedHabitsMap', jsonEncode(selectedHabitMap));
+    await prefs.setString('completedHabitsMap', jsonEncode(completedHabitMap));
   }
 
   Color _getColorFromHex(String hexColor) {
@@ -58,6 +78,32 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
           ),
         ),
         automaticallyImplyLeading: true,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue.shade700),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(leading: Icon(Icons.settings), title: Text('Configure')),
+            ListTile(leading: Icon(Icons.person), title: Text('Personal Info')),
+            ListTile(leading: Icon(Icons.analytics), title: Text('Reports')),
+            ListTile(
+              leading: Icon(Icons.notifications),
+              title: Text('Notifications'),
+            ),
+            ListTile(leading: Icon(Icons.logout), title: Text('Sign Out')),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -203,7 +249,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
   }) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
+      child: SizedBox(
         height: 60,
         child: ListTile(
           title: Text(
