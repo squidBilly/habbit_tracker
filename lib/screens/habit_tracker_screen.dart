@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:habbit_tracker/components/menu_drawer.dart';
 import 'package:habbit_tracker/screens/add_habit_screen.dart';
+import 'package:habbit_tracker/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HabitTrackerScreen extends StatefulWidget {
@@ -79,32 +81,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
         ),
         automaticallyImplyLeading: true,
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue.shade700),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ListTile(leading: Icon(Icons.settings), title: Text('Configure')),
-            ListTile(leading: Icon(Icons.person), title: Text('Personal Info')),
-            ListTile(leading: Icon(Icons.analytics), title: Text('Reports')),
-            ListTile(
-              leading: Icon(Icons.notifications),
-              title: Text('Notifications'),
-            ),
-            ListTile(leading: Icon(Icons.logout), title: Text('Sign Out')),
-          ],
-        ),
-      ),
+      drawer: MenuDrawer(loadUserData: _loadUserData, signOut: _signOut),
       body: Column(
         children: [
           const Padding(
@@ -265,6 +242,15 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
               : null,
         ),
       ),
+    );
+  }
+
+  void _signOut(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
     );
   }
 }
